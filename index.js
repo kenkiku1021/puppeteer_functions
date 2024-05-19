@@ -159,9 +159,6 @@ functions.http('screenshot', async (req, res) => {
   method: POST
   @url : 取得するページのURL
   @html : 取得するページのHTML
-  @width : ビューポートの幅 (optional, default: 1920)
-  @height : ビューポートの高さ (optional, default: 1080)
-  @scale : デバイススケールファクター (optional, default: 1)
 */
 functions.http('make_pdf', async (req, res) => {
   try {
