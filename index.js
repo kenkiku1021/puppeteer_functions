@@ -1,5 +1,6 @@
 const functions = require('@google-cloud/functions-framework');
 const puppeteer = require('puppeteer');
+const { execFile } = require('child_process');
 
 const PUPPETEER_LAUNCH_OPTION = {
   args: ['--lang=ja']
@@ -7,6 +8,41 @@ const PUPPETEER_LAUNCH_OPTION = {
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
 const DEFAULT_SCALE = 1;
+
+async function init() {
+  setFontConfig();
+  //logAllFonts();
+  //logMatchedFonts();
+}
+
+async function setFontConfig() {
+  const cwd = process.cwd();
+  process.env.XDG_CONFIG_HOME = cwd;
+  const child = execFile('fc-cache', ['-r'], (error, stdout, stderr) => {
+    if(error) {
+      throw error;
+    }
+    console.log("fc-cache", stdout);
+  });
+}
+
+async function logAllFonts() {
+  const child = execFile('fc-list', [''], (error, stdout, stderr) => {
+    if (error) {
+      throw error;
+    }
+    console.log(stdout);
+  });
+}
+
+async function logMatchedFonts() {
+  const child = execFile('fc-match', [':lang=ja'], (error, stdout, stderr) => {
+    if (error) {
+      throw error;
+    }
+    console.log("lang=ja", stdout);
+  });
+}
 
 function getParams(req) {
   if(req.method !== "POST") {
@@ -58,6 +94,7 @@ async function getNewPage(browser, width = DEFAULT_WIDTH, height = DEFAULT_HEIGH
 */
 async function renderFromUrl(url, type = "pdf", width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, scale = DEFAULT_SCALE) {
   try {
+    await init();
     const browser = await puppeteer.launch(PUPPETEER_LAUNCH_OPTION);
     const page = await getNewPage(browser, width, height, scale);
     await page.goto(url, {
@@ -82,6 +119,7 @@ async function renderFromUrl(url, type = "pdf", width = DEFAULT_WIDTH, height = 
 */
 async function renderFromHtml(html, type = "pdf", width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, scale = DEFAULT_SCALE) {
   try {
+    await init();
     const browser = await puppeteer.launch(PUPPETEER_LAUNCH_OPTION);
     const page = await getNewPage(browser, width, height, scale);
     await page.setContent(html);
@@ -136,3 +174,4 @@ functions.http('make_pdf', async (req, res) => {
     res.status(err.code || 500).send(err);
   }
 });
+
