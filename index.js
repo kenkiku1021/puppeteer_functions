@@ -3,7 +3,19 @@ const puppeteer = require('puppeteer');
 const { execFile } = require('child_process');
 
 const PUPPETEER_LAUNCH_OPTION = {
-  args: ['--lang=ja']
+  args: [
+    '--disable-gpu',
+    '--disable-dev-shm-usage',
+    '--disable-setuid-sandbox',
+    '--no-first-run',
+    '--no-sandbox',
+    '--no-zygote',
+    '--single-process',
+    '--lang=ja',
+  ],
+};
+const PUPPETEER_PDF_OPTION = {
+  format: "A4",
 };
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
@@ -100,7 +112,7 @@ async function renderFromUrl(url, type = "pdf", width = DEFAULT_WIDTH, height = 
     await page.goto(url, {
       waitUntil: "networkidle0"
     });
-    const buffer = type === "png" ? await page.screenshot() : await page.pdf();
+    const buffer = type === "png" ? await page.screenshot() : await page.pdf(PUPPETEER_PDF_OPTION);
     await browser.close();
 
     return buffer;
@@ -123,7 +135,7 @@ async function renderFromHtml(html, type = "pdf", width = DEFAULT_WIDTH, height 
     const browser = await puppeteer.launch(PUPPETEER_LAUNCH_OPTION);
     const page = await getNewPage(browser, width, height, scale);
     await page.setContent(html);
-    const buffer = type === "png" ? await page.screenshot() : await page.pdf();
+    const buffer = type === "png" ? await page.screenshot() : await page.pdf(PUPPETEER_PDF_OPTION);
     await browser.close();
 
     return buffer;
@@ -144,9 +156,19 @@ async function renderFromHtml(html, type = "pdf", width = DEFAULT_WIDTH, height 
 */
 functions.http('screenshot', async (req, res) => {
   try {
-    const [url, html, width, height, scale] = getParams(req);
-    const screenshot = url ? await renderFromUrl(url, "png", width, height, scale) : await renderFromHtml(html, "png", width, height, scale);
-    res.type('png').send(screenshot);
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+      // Send response to OPTIONS requests
+      res.set('Access-Control-Allow-Methods', 'POST');
+      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      res.set('Access-Control-Max-Age', '3600');
+      res.status(204).send('');
+    }
+    else {
+      const [url, html, width, height, scale] = getParams(req);
+      const screenshot = url ? await renderFromUrl(url, "png", width, height, scale) : await renderFromHtml(html, "png", width, height, scale);
+      res.type('png').send(screenshot);
+    }
   }
   catch(err) {
     console.error(err);
@@ -162,9 +184,19 @@ functions.http('screenshot', async (req, res) => {
 */
 functions.http('make_pdf', async (req, res) => {
   try {
-    const [url, html, width, height, scale] = getParams(req);
-    const pdf = url ? await renderFromUrl(url, "pdf", width, height, scale) : await renderFromHtml(html, "pdf", width, height, scale);
-    res.type('pdf').send(pdf);
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+      // Send response to OPTIONS requests
+      res.set('Access-Control-Allow-Methods', 'POST');
+      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      res.set('Access-Control-Max-Age', '3600');
+      res.status(204).send('');
+    }
+    else {
+      const [url, html, width, height, scale] = getParams(req);
+      const pdf = url ? await renderFromUrl(url, "pdf", width, height, scale) : await renderFromHtml(html, "pdf", width, height, scale);
+      res.type('pdf').send(pdf);
+    }
   }
   catch(err) {
     console.error(err);
